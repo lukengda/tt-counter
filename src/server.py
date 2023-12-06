@@ -36,7 +36,7 @@ def binary_aquire(pin, duration):
     return results
 
 
-def on_ir_receive(pinNo):
+def process_ir_event(pinNo):
     bouncetime = 150
     # when edge detect is called (which requires less CPU than constant
     # data acquisition), we acquire data as quickly as possible
@@ -53,7 +53,6 @@ def on_ir_receive(pinNo):
             i_break = i
     # decode ( < 1 ms "1" pulse is a 1, > 1 ms "1" pulse is a 1, longer than 2 ms pulse is something else)
     # does not decode channel, which may be a piece of the information after the long 1 pulse in the middle
-    code = None
     outbin = ""
     for val, us in pulses:
         if val != 1:
@@ -65,10 +64,13 @@ def on_ir_receive(pinNo):
         elif 1000 < us < 2000:
             outbin += "1"
     try:
-        code = int(outbin, 2)
+        return int(outbin, 2)
     except ValueError:
-        code = None
+        return None
 
+
+def on_ir_receive(pinNo):
+    code = process_ir_event(pinNo)
     if code:
         print(f"Sending received code to all connected clients: {str(hex(code))}")
         send_to_websockets(str(hex(code)))
