@@ -17,6 +17,7 @@ async def connect(websocket):
 
 
 def send_to_websockets(msg):
+    print(f"Currently {len(sockets)} socket(s) connected.")
     websockets.broadcast(sockets, msg)
 
 
@@ -64,7 +65,7 @@ def process_ir_event(pinNo):
         elif 1000 < us < 2000:
             outbin += "1"
     try:
-        return int(outbin, 2)
+        return hex(int(outbin, 2))
     except ValueError:
         return None
 
@@ -72,21 +73,19 @@ def process_ir_event(pinNo):
 def on_ir_receive(pinNo):
     code = process_ir_event(pinNo)
     if code:
-        print(f"Sending received code to all connected clients: {str(hex(code))}")
-        send_to_websockets(str(hex(code)))
-    else:
-        print("Invalid code")
+        print(f"Sending received code to all connected clients: {code}")
+        send_to_websockets(code)
 
 
 def setup_ir_receiver():
-    print("Setting up Listener…")
+    print("Setting up GPIO pins…")
     GPIO.setmode(GPIO.BOARD)  # Numbers GPIOs by physical location
     GPIO.setup(ir_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     print("Starting IR Listener…")
     GPIO.add_event_detect(ir_pin, GPIO.FALLING)
     GPIO.add_event_callback(ir_pin, on_ir_receive)
-    print("IR Listener started. Waiting for input…")
+    print("IR Listener started. Waiting for input.")
 
 
 asyncio.run(main())
